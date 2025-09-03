@@ -1,0 +1,101 @@
+﻿#include <iostream>
+using namespace std;
+
+
+class b1 
+{
+private:
+    string name;
+
+public:
+    b1(string n) {
+        name = n;
+        cout << "constr b1" << endl;
+    };
+    void show() {
+        cout << name << endl;
+    }
+    virtual ~b1() {
+        cout << "destr b1" << endl;
+    }
+};
+
+class d1 : public b1 {
+private:
+    string name;
+
+public:
+    d1(string name) : b1{name} {
+        cout << "constr d1" << endl;
+    }
+
+    b1::show;
+
+    ~d1() override {
+        cout << "destr d1" << endl;
+    }
+};
+
+class d2 : private d1 {
+private:
+    string name;
+
+public:
+    d2(string name) : d1{name} {
+        cout << "constr d2" << endl;
+    }
+    d1::show;
+    ~d2()  override {
+        cout << "destr d2" << endl;
+    }
+};
+
+class b2 : private d2{
+private:
+    string n;
+
+public:
+    b2(string name) : d2{name} {
+        cout << "constr b2" << endl;
+    }
+    d2::show;
+
+    ~b2()  override {
+        cout << "destr b2" << endl;
+    }
+};
+
+class d3 : public d2 {
+private:
+    string name;
+
+public:
+    d3(string name) : d2{name} {
+        cout << "constr D3" << endl;
+    }
+    d2::show;
+    ~d3() override {
+        cout << "destr d3" << endl;
+    }
+};
+
+
+
+int main()
+{
+    b1 B1("b1");
+    B1.show();
+
+    d1 D1("d1");
+    D1.show();
+
+    d2 D2("d2");
+    D2.show();
+
+    d3 D3("d3");
+    D3.show();
+
+    b2 B2("b2");
+    B2.show();
+
+}
