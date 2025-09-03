@@ -16,7 +16,7 @@ public:
         cout << name << endl;
     }
     virtual ~b1() {
-        cout << "destr b1" << endl;
+        cout << "destr b1\n" << endl;
     }
 };
 
@@ -99,3 +99,4 @@ int main()
     B2.show();
 
 }
+
