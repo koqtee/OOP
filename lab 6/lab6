@@ -9,7 +9,7 @@ private:
 
 public:
     b1(string n) {
-        name = n;
+        name = n ;
         cout << "constr b1" << endl;
     };
     void show() {
@@ -24,8 +24,8 @@ class d1 : public b1 {
 private:
     string name;
 
-public:
-    d1(string name) : b1{name} {
+public: 
+    d1(string name) : b1{"b1 -> " + name} {
         cout << "constr d1" << endl;
     }
 
@@ -41,7 +41,7 @@ private:
     string name;
 
 public:
-    d2(string name) : d1{name} {
+    d2(string name) : d1{"d1 -> " +name} {
         cout << "constr d2" << endl;
     }
     d1::show;
@@ -55,7 +55,7 @@ private:
     string n;
 
 public:
-    b2(string name) : d2{name} {
+    b2(string name) : d2{" d2 -> " + name} {
         cout << "constr b2" << endl;
     }
     d2::show;
@@ -70,7 +70,7 @@ private:
     string name;
 
 public:
-    d3(string name) : d2{name} {
+    d3(string name) : d2{" d2 -> " + name} {
         cout << "constr D3" << endl;
     }
     d2::show;
