@@ -1,0 +1,130 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <map>
+#include <memory>
+
+class Course;
+class Teacher;
+class Student;
+
+class Grade {
+public:
+    const Course* course;
+    const Teacher* teacher;
+    int value;
+
+    Grade(const Course* course, const Teacher* teacher, int val)
+        : course(course), teacher(teacher), value(val) {
+    }
+};
+
+class StudentArchive {
+    std::vector<Grade> grades;
+
+public:
+    void addGrade(const Grade& grade) {
+        grades.push_back(grade);
+    }
+
+    void showArchive() const;
+};
+
+class Teacher {
+    std::string name;
+
+public:
+    Teacher(const std::string& name) : name(name) {}
+
+    std::shared_ptr<Course> createCourse(const std::string& title);
+    void gradeStudent(Student& student, const Course& course, int value);
+
+    std::string getName() const { return name; }
+};
+
+class Course {
+    std::string title;
+    Teacher* teacher;
+    std::vector<Student*> attendedStudents;
+
+public:
+    Course(const std::string& title, Teacher* teacher)
+        : title(title), teacher(teacher) {
+    }
+
+    void attendStudent(Student* student) {
+        attendedStudents.push_back(student);
+    }
+
+    std::string getTitle() const { return title; }
+    Teacher* getTeacher() const { return teacher; }
+};
+
+class Student {
+    std::string name;
+    StudentArchive archive;
+    std::vector<std::shared_ptr<Course>> attendedCourses;
+
+public:
+    Student(const std::string& name) : name(name) {}
+
+    void attend(std::shared_ptr<Course> course);
+    void receiveGrade(const Grade& grade) {
+        archive.addGrade(grade);
+    }
+
+    void showGrades() const {
+        std::cout << "\n" << "Студент: " << name;
+        archive.showArchive();
+    }
+
+    std::string getName() const { return name; }
+};
+
+void StudentArchive::showArchive() const {
+    std::cout << ", архив оценок:\n";
+    for (const auto& grade : grades) {
+        std::cout << "курс - " << grade.course->getTitle()
+            << ", преподаватель - " << grade.teacher->getName()
+            << ", оценка - " << grade.value << "\n" ;
+    }
+}
+
+void Student::attend(std::shared_ptr<Course> course) {
+    attendedCourses.push_back(course);
+    course->attendStudent(this);
+}
+
+std::shared_ptr<Course> Teacher::createCourse(const std::string& title) {
+    return std::make_shared<Course>(title, this);
+}
+
+void Teacher::gradeStudent(Student& student, const Course& course, int value) {
+    student.receiveGrade(Grade(&course, this, value));
+}
+
+int main() {
+    std::locale::global(std::locale(""));
+
+    Teacher t1("Голубев");
+    Teacher t2("Шведов");
+
+    Student s1("Паша");
+    Student s2("Саша");
+
+    auto math = t1.createCourse("Математика");
+    auto eng = t2.createCourse("Английский");
+
+    s1.attend(math);
+    s1.attend(eng);
+    s2.attend(eng);
+
+    t1.gradeStudent(s1, *math, 9);
+    t2.gradeStudent(s1, *eng, 8);
+    t2.gradeStudent(s2, *eng, 10);
+
+    s1.showGrades();
+    s2.showGrades();
+
+    return 0;
+}
