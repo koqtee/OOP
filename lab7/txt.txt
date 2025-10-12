@@ -1,1 +1,136 @@
+#include <iostream>
+#include <string>
+using namespace std;
 
+
+template <typename T>
+class Queue {
+private:
+    T* data;
+    int front, rear, capacity;
+
+public:
+    Queue(int size = 10) {
+        capacity = size;
+        data = new T[capacity];
+        front = 0;
+        rear = -1;
+    }
+
+    ~Queue() {
+        delete[] data;
+    }
+
+    bool isEmpty() const {
+        return front > rear;
+    }
+
+    bool isFull() const {
+        return rear == capacity - 1;
+    }
+
+    void enqueue(const T& value) {
+        if (isFull()) {
+            cout << "Queue is full!\n";
+            return;
+        }
+        data[++rear] = value;
+    }
+
+    void dequeue() {
+        if (isEmpty()) {
+            cout << "Queue is empty\n";
+            return;
+        }
+        front++;
+    }
+
+    T peek() const {
+        if (isEmpty()) {
+            throw runtime_error("Queue is empty");
+        }
+        return data[front];
+    }
+
+    void display() const {
+        if (isEmpty()) {
+            cout << "Queue is empty\n";
+            return;
+        }
+        cout << "Queue elements: ";
+        for (int i = front; i <= rear; ++i) {
+            cout << data[i] << " ";
+        }
+        cout << endl;
+    }
+};
+
+template <typename T>
+void testQueue() {
+    Queue<T> q(5);
+    int choice;
+    T value;
+
+    do {
+        cout << "\nMenu:\n";
+        cout << "1. Add element (enqueue)\n";
+        cout << "2. Remove element (dequeue)\n";
+        cout << "3. View first element (peek)\n";
+        cout << "4. Display queue\n";
+        cout << "0. Exit\n";
+        cout << "\n";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                cout << "Enter value: ";
+                cin >> value;
+                q.enqueue(value);
+                break;
+            case 2:
+                q.dequeue();
+                break;
+            case 3:
+                try {
+                    cout << "First element: " << q.peek() << endl;
+                } catch (const exception& e) {
+                    cout << e.what() << endl;
+                }
+                break;
+            case 4:
+                q.display();
+                break;
+            case 0:
+                cout << "End\n";
+                break;
+            default:
+                cout << "Error\n";
+        }
+    } while (choice != 0);
+}
+
+int main() {
+    int typeChoice;
+    cout << "Queue data type:\n";
+    cout << "1. int\n";
+    cout << "2. double\n";
+    cout << "3. string\n";
+    cout << "\n";
+    cin >> typeChoice;
+
+    switch (typeChoice) {
+        case 1:
+            testQueue<int>();
+            break;
+        case 2:
+            testQueue<double>();
+            break;
+        case 3:
+            testQueue<string>();
+            break;
+        default:
+            cout << "Error\n";
+    }
+
+    return 0;
+}
