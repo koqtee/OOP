@@ -8,6 +8,13 @@ class Course;
 class Teacher;
 class Student;
 
+
+class INamed {
+public:
+    virtual ~INamed() = default;
+    virtual std::string getName() const = 0;
+};
+
 class Grade {
 public:
     const Course* course;
@@ -30,7 +37,7 @@ public:
     void showArchive() const;
 };
 
-class Teacher {
+class Teacher : public INamed {
     std::string name;
 
 public:
@@ -39,10 +46,10 @@ public:
     std::shared_ptr<Course> createCourse(const std::string& title);
     void gradeStudent(Student& student, const Course& course, int value);
 
-    std::string getName() const { return name; }
+    std::string getName() const override { return name; }
 };
 
-class Course {
+class Course : public INamed {
     std::string title;
     Teacher* teacher;
     std::vector<Student*> attendedStudents;
@@ -56,11 +63,12 @@ public:
         attendedStudents.push_back(student);
     }
 
+    std::string getName() const override { return title; }
     std::string getTitle() const { return title; }
     Teacher* getTeacher() const { return teacher; }
 };
 
-class Student {
+class Student : public INamed {
     std::string name;
     StudentArchive archive;
     std::vector<std::shared_ptr<Course>> attendedCourses;
@@ -78,13 +86,13 @@ public:
         archive.showArchive();
     }
 
-    std::string getName() const { return name; }
+    std::string getName() const override { return name; }
 };
 
 void StudentArchive::showArchive() const {
     std::cout << ", архив оценок:\n";
     for (const auto& grade : grades) {
-        std::cout << "курс - " << grade.course->getTitle()
+        std::cout << "курс - " << grade.course->getName()
             << ", преподаватель - " << grade.teacher->getName()
             << ", оценка - " << grade.value << "\n" ;
     }
@@ -102,6 +110,7 @@ std::shared_ptr<Course> Teacher::createCourse(const std::string& title) {
 void Teacher::gradeStudent(Student& student, const Course& course, int value) {
     student.receiveGrade(Grade(&course, this, value));
 }
+
 
 int main() {
     std::locale::global(std::locale(""));
@@ -125,6 +134,7 @@ int main() {
 
     s1.showGrades();
     s2.showGrades();
+
 
     return 0;
 }
