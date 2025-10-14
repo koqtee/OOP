@@ -1,0 +1,140 @@
+@startuml
+!theme plain
+
+title Sequence Diagram: Система управления курсами и оценками
+
+actor "Администратор" as Admin
+
+participant "t1: Teacher" as Teacher1
+participant "t2: Teacher" as Teacher2
+participant "s1: Student" as Student1
+participant "s2: Student" as Student2
+participant "math: Course" as MathCourse
+participant "eng: Course" as EngCourse
+participant "archive1: StudentArchive" as Archive1
+participant "archive2: StudentArchive" as Archive2
+
+== Инициализация системы ==
+
+Admin -> Teacher1: new Teacher("Голубев")
+Admin -> Teacher2: new Teacher("Шведов")
+Admin -> Student1: new Student("Паша")
+Admin -> Student2: new Student("Саша")
+
+Admin -> Teacher1: createCourse("Математика")
+activate Teacher1
+Teacher1 -> MathCourse: new Course("Математика", t1)
+activate MathCourse
+MathCourse --> Teacher1: 
+deactivate MathCourse
+Teacher1 --> Admin: math
+deactivate Teacher1
+
+Admin -> Teacher2: createCourse("Английский")
+activate Teacher2
+Teacher2 -> EngCourse: new Course("Английский", t2)
+activate EngCourse
+EngCourse --> Teacher2: 
+deactivate EngCourse
+Teacher2 --> Admin: eng
+deactivate Teacher2
+
+== Запись студентов на курсы ==
+
+Admin -> Student1: attend(math)
+activate Student1
+Student1 -> MathCourse: attendStudent(s1)
+activate MathCourse
+MathCourse --> Student1: 
+deactivate MathCourse
+Student1 --> Admin: 
+deactivate Student1
+
+Admin -> Student1: attend(eng)
+activate Student1
+Student1 -> EngCourse: attendStudent(s1)
+activate EngCourse
+EngCourse --> Student1: 
+deactivate EngCourse
+Student1 --> Admin: 
+deactivate Student1
+
+Admin -> Student2: attend(eng)
+activate Student2
+Student2 -> EngCourse: attendStudent(s2)
+activate EngCourse
+EngCourse --> Student2: 
+deactivate EngCourse
+Student2 --> Admin: 
+deactivate Student2
+
+== Выставление оценок ==
+
+Admin -> Teacher1: gradeStudent(s1, *math, 9)
+activate Teacher1
+Teacher1 -> Teacher1: Grade(&math, this, 9)
+Teacher1 -> Student1: receiveGrade(grade)
+activate Student1
+Student1 -> Archive1: addGrade(grade)
+activate Archive1
+Archive1 --> Student1: 
+deactivate Archive1
+Student1 --> Teacher1: 
+deactivate Student1
+Teacher1 --> Admin: 
+deactivate Teacher1
+
+Admin -> Teacher2: gradeStudent(s1, *eng, 8)
+activate Teacher2
+Teacher2 -> Teacher2: Grade(&eng, this, 8)
+Teacher2 -> Student1: receiveGrade(grade)
+activate Student1
+Student1 -> Archive1: addGrade(grade)
+activate Archive1
+Archive1 --> Student1: 
+deactivate Archive1
+Student1 --> Teacher2: 
+deactivate Student1
+Teacher2 --> Admin: 
+deactivate Teacher2
+
+Admin -> Teacher2: gradeStudent(s2, *eng, 10)
+activate Teacher2
+Teacher2 -> Teacher2: Grade(&eng, this, 10)
+Teacher2 -> Student2: receiveGrade(grade)
+activate Student2
+Student2 -> Archive2: addGrade(grade)
+activate Archive2
+Archive2 --> Student2: 
+deactivate Archive2
+Student2 --> Teacher2: 
+deactivate Student2
+Teacher2 --> Admin: 
+deactivate Teacher2
+
+== Просмотр оценок ==
+
+Admin -> Student1: showGrades()
+activate Student1
+Student1 -> Student1: cout "Студент: Паша"
+Student1 -> Archive1: showArchive()
+activate Archive1
+Archive1 -> Archive1: iterate grades
+Archive1 -> Archive1: cout курс, преподаватель, оценка
+Archive1 --> Student1: 
+deactivate Archive1
+Student1 --> Admin: 
+deactivate Student1
+
+Admin -> Student2: showGrades()
+activate Student2
+Student2 -> Student2: cout "Студент: Саша"
+Student2 -> Archive2: showArchive()
+activate Archive2
+Archive2 -> Archive2: iterate grades
+Archive2 -> Archive2: cout курс, преподаватель, оценка
+Archive2 --> Student2: 
+deactivate Archive2
+Student2 --> Admin: 
+deactivate Student2
+@enduml
