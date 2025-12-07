@@ -1,0 +1,240 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <iomanip>
+
+struct Train {
+    std::string number;
+    std::string destination;
+    std::string departure;
+
+    Train(const std::string& num = "", const std::string& dest = "", const std::string& dep = "")
+        : number(num), destination(dest), departure(dep) {
+    }
+};
+
+// Ввод одного поезда с клавиатуры (добавляется в существующий список)
+void addTrainFromKeyboard(std::vector<Train>& trains) {
+    std::string num, dest, dep;
+    std::cout << "\nВведите данные нового поезда:\n";
+    std::cout << "Номер поезда: ";
+    std::getline(std::cin, num);
+    std::cout << "Станция назначения: ";
+    std::getline(std::cin, dest);
+    std::cout << "Время отправления (ЧЧ:ММ): ";
+    std::getline(std::cin, dep);
+
+    if (!num.empty() && !dest.empty() && !dep.empty()) {
+        trains.emplace_back(num, dest, dep);
+        std::cout << "Поезд успешно добавлен!\n\n";
+    }
+    else {
+        std::cout << "Ошибка: некоторые поля пусты. Поезд не добавлен.\n\n";
+    }
+}
+
+// Загрузка всех данных из файла (добавление к текущему списку)
+void loadTrainsFromFile(std::vector<Train>& trains) {
+    std::string filename;
+    std::cout << "Введите имя файла для загрузки (например, trains.txt): ";
+    std::getline(std::cin, filename);
+
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Ошибка: Не удалось открыть файл '" << filename << "'\n\n";
+        return;
+    }
+
+    // НЕ очищаем trains - добавляем к существующим данным
+    std::string line;
+    int loadedCount = 0;
+    while (std::getline(file, line)) {
+        if (line.empty()) continue;
+
+        size_t pos1 = line.find(';');
+        if (pos1 == std::string::npos) continue;
+        size_t pos2 = line.find(';', pos1 + 1);
+        if (pos2 == std::string::npos) continue;
+
+        std::string num = line.substr(0, pos1);
+        std::string dest = line.substr(pos1 + 1, pos2 - pos1 - 1);
+        std::string dep = line.substr(pos2 + 1);
+
+        trains.emplace_back(num, dest, dep);
+        loadedCount++;
+    }
+    file.close();
+    std::cout << "Данные успешно загружены из файла '" << filename << "'. Добавлено " << loadedCount << " поездов.\n\n";
+}
+
+// Вывод всех поездов
+void printAllTrains(const std::vector<Train>& trains) {
+    if (trains.empty()) {
+        std::cout << "Список поездов пуст.\n\n";
+        return;
+    }
+
+    std::cout << "\nСписок всех поездов:\n";
+    std::cout << std::setw(10) << "Номер"
+        << std::setw(25) << "Станция назначения"
+        << std::setw(15) << "Отправление" << "\n";
+    std::cout << std::string(50, '-') << "\n";
+
+    for (const auto& train : trains) {
+        std::cout << std::setw(10) << train.number
+            << std::setw(25) << train.destination
+            << std::setw(15) << train.departure << "\n";
+    }
+    std::cout << "\n";
+}
+
+// Поиск по номеру поезда
+void findTrainByNumber(const std::vector<Train>& trains) {
+    if (trains.empty()) {
+        std::cout << "Список поездов пуст.\n\n";
+        return;
+    }
+
+    std::string number;
+    std::cout << "Введите номер поезда: ";
+    std::getline(std::cin, number);
+
+    bool found = false;
+    for (const auto& train : trains) {
+        if (train.number == number) {
+            std::cout << "\nНайден поезд:\n";
+            std::cout << "Номер: " << train.number << "\n";
+            std::cout << "Станция назначения: " << train.destination << "\n";
+            std::cout << "Время отправления: " << train.departure << "\n\n";
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        std::cout << "Поезд с номером '" << number << "' не найден.\n\n";
+    }
+}
+
+// Поиск по станции назначения
+void findTrainsByDestination(const std::vector<Train>& trains) {
+    if (trains.empty()) {
+        std::cout << "Список поездов пуст.\n\n";
+        return;
+    }
+
+    std::string dest;
+    std::cout << "Введите станцию назначения: ";
+    std::getline(std::cin, dest);
+
+    std::vector<Train> matches;
+    for (const auto& train : trains) {
+        if (train.destination == dest) {
+            matches.push_back(train);
+        }
+    }
+
+    if (matches.empty()) {
+        std::cout << "Нет поездов до станции '" << dest << "'.\n\n";
+    }
+    else {
+        std::cout << "\nПоезда до станции '" << dest << "':\n";
+        std::cout << std::setw(10) << "Номер"
+            << std::setw(25) << "Станция назначения"
+            << std::setw(15) << "Отправление" << "\n";
+        std::cout << std::string(50, '-') << "\n";
+        for (const auto& t : matches) {
+            std::cout << std::setw(10) << t.number
+                << std::setw(25) << t.destination
+                << std::setw(15) << t.departure << "\n";
+        }
+        std::cout << "\n";
+    }
+}
+
+// Сохранение всех поездов в файл
+void saveTrainsToFile(const std::vector<Train>& trains) {
+    std::string filename;
+    std::cout << "имя файла: ";
+    std::getline(std::cin, filename);
+
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Ошибка: Не удалось создать файл '" << filename << "'\n\n";
+        return;
+    }
+
+    for (const auto& train : trains) {
+        file << train.number << ";" << train.destination << ";" << train.departure << "\n";
+    }
+    file.close();
+    std::cout << "Данные успешно сохранены в файл '" << filename << "'.\n\n";
+}
+
+// Функция для паузы
+void pause() {
+    std::cout << "...";
+    std::cin.get();
+}
+
+// Главное меню
+void showMenu() {
+    std::cout << "\n=== Автоматизированная информационная система на железнодорожном вокзале ===\n";
+    std::cout << "1. Добавить поезд (ввод с клавиатуры)\n";
+    std::cout << "2. Загрузить данные из файла (добавить к существующим)\n";
+    std::cout << "3. Вывести список всех поездов\n";
+    std::cout << "4. Найти поезд по номеру\n";
+    std::cout << "5. Найти поезда по станции назначения\n";
+    std::cout << "6. Сохранить все данные в файл\n";
+    std::cout << "0. Выход\n";
+    std::cout << "Выберите действие: ";
+}
+
+int main() {
+    std::vector<Train> trains;
+    int choice;
+
+    setlocale(LC_ALL, "");
+
+    do {
+        showMenu();
+        std::cin >> choice;
+        std::cin.ignore(); // очищаем буфер после ввода числа
+
+        switch (choice) {
+        case 1:
+            addTrainFromKeyboard(trains);
+            pause();
+            break;
+        case 2:
+            loadTrainsFromFile(trains);
+            pause();
+            break;
+        case 3:
+            printAllTrains(trains);
+            pause();
+            break;
+        case 4:
+            findTrainByNumber(trains);
+            pause();
+            break;
+        case 5:
+            findTrainsByDestination(trains);
+            pause();
+            break;
+        case 6:
+            saveTrainsToFile(trains);
+            pause();
+            break;
+        case 0:
+            std::cout << ".\n";
+            break;
+        default:
+            std::cout << "Ошибка\n\n";
+            pause();
+        }
+    } while (choice != 0);
+
+    return 0;
+}
