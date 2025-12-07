@@ -1,0 +1,303 @@
+#include <iostream>
+#include <string>
+#include <memory>
+#include <vector>
+#include <map>
+
+class UserData {
+public:
+    virtual ~UserData() = default;
+    virtual void display() const = 0;
+    virtual std::string getType() const = 0;
+};
+
+class PersonalInfo : public UserData {
+private:
+    std::string firstName;
+    std::string lastName;
+    int age;
+
+public:
+    PersonalInfo(const std::string& first, const std::string& last, int age)
+        : firstName(first), lastName(last), age(age) {
+    }
+
+    void display() const override {
+        std::cout << "Personal Info: " << firstName << " " << lastName << ", " << age << " years\n";
+    }
+
+    std::string getType() const override { return "PersonalInfo"; }
+
+    std::string getFirstName() const { return firstName; }
+    std::string getLastName() const { return lastName; }
+    int getAge() const { return age; }
+};
+
+class ContactInfo : public UserData {
+private:
+    std::string email;
+    std::string phone;
+
+public:
+    ContactInfo(const std::string& email, const std::string& phone)
+        : email(email), phone(phone) {
+    }
+
+    void display() const override {
+        std::cout << "Contact Info: " << email << ", " << phone << "\n";
+    }
+
+    std::string getType() const override { return "ContactInfo"; }
+
+    std::string getEmail() const { return email; }
+    std::string getPhone() const { return phone; }
+};
+
+class AddressInfo : public UserData {
+private:
+    std::string country;
+    std::string city;
+    std::string street;
+
+public:
+    AddressInfo(const std::string& country, const std::string& city, const std::string& street)
+        : country(country), city(city), street(street) {
+    }
+
+    void display() const override {
+        std::cout << "Address Info: " << country << ", " << city << ", " << street << "\n";
+    }
+
+    std::string getType() const override { return "AddressInfo"; }
+
+    std::string getCountry() const { return country; }
+    std::string getCity() const { return city; }
+    std::string getStreet() const { return street; }
+};
+
+class UserDataFactory {
+public:
+    virtual ~UserDataFactory() = default;
+    virtual std::unique_ptr<PersonalInfo> createPersonalInfo() const = 0;
+    virtual std::unique_ptr<ContactInfo> createContactInfo() const = 0;
+    virtual std::unique_ptr<AddressInfo> createAddressInfo() const = 0;
+};
+
+class StandardUserFactory : public UserDataFactory {
+public:
+    std::unique_ptr<PersonalInfo> createPersonalInfo() const override {
+        return std::make_unique<PersonalInfo>("Yi", "Xuan", 25);
+    }
+
+    std::unique_ptr<ContactInfo> createContactInfo() const override {
+        return std::make_unique<ContactInfo>("john.doe@email.com", "+1234567890");
+    }
+
+    std::unique_ptr<AddressInfo> createAddressInfo() const override {
+        return std::make_unique<AddressInfo>("Kitai", "Pekin", "Beijing 134 st");
+    }
+};
+
+class PremiumUserFactory : public UserDataFactory {
+public:
+    std::unique_ptr<PersonalInfo> createPersonalInfo() const override {
+        return std::make_unique<PersonalInfo>("Fake", "Mink", 20);
+    }
+
+    std::unique_ptr<ContactInfo> createContactInfo() const override {
+        return std::make_unique<ContactInfo>("fakeminkUKrap@premium.com", "+1987654321");
+    }
+
+    std::unique_ptr<AddressInfo> createAddressInfo() const override {
+        return std::make_unique<AddressInfo>("UK", "London", "456 Park Av");
+    }
+};
+
+class MinimalUserFactory : public UserDataFactory {
+public:
+    std::unique_ptr<PersonalInfo> createPersonalInfo() const override {
+        return std::make_unique<PersonalInfo>("Pasha", "Snusov", 22);
+    }
+
+    std::unique_ptr<ContactInfo> createContactInfo() const override {
+        return std::make_unique<ContactInfo>("esdee@minimal.com", "");
+    }
+
+    std::unique_ptr<AddressInfo> createAddressInfo() const override {
+        return std::make_unique<AddressInfo>("", "", "");
+    }
+};
+
+class UserDAO {
+public:
+    virtual ~UserDAO() = default;
+    virtual void save(const std::vector<std::unique_ptr<UserData>>& userData) = 0;
+    virtual std::vector<std::unique_ptr<UserData>> load() = 0;
+    virtual void deleteUser() = 0;
+};
+
+class DatabaseUserDAO : public UserDAO {
+private:
+    std::string connectionString;
+
+public:
+    DatabaseUserDAO(const std::string& connStr) : connectionString(connStr) {}
+
+    void save(const std::vector<std::unique_ptr<UserData>>& userData) override {
+        std::cout << "Saving user: " << connectionString << "\n";
+        for (const auto& data : userData) {
+            std::cout << "  - ";
+            data->display();
+        }
+        std::cout << "Data was saved\n\n";
+    }
+
+    std::vector<std::unique_ptr<UserData>> load() override {
+        std::cout << "Loading user: " << connectionString << "\n";
+        std::vector<std::unique_ptr<UserData>> data;
+        return data;
+    }
+
+    void deleteUser() override {
+        std::cout << "Deleting user: " << connectionString << "\n\n";
+    }
+};
+
+class FileUserDAO : public UserDAO {
+private:
+    std::string filename;
+
+public:
+    FileUserDAO(const std::string& file) : filename(file) {}
+
+    void save(const std::vector<std::unique_ptr<UserData>>& userData) override {
+        std::cout << "Saving user data to file: " << filename << "\n";
+        for (const auto& data : userData) {
+            std::cout << "  - ";
+            data->display();
+        }
+        std::cout << "Data successfully saved to file!\n\n";
+    }
+
+    std::vector<std::unique_ptr<UserData>> load() override {
+        std::cout << "Loading user data from file: " << filename << "\n";
+        std::vector<std::unique_ptr<UserData>> data;
+        return data;
+    }
+
+    void deleteUser() override {
+        std::cout << "Deleting user data from file: " << filename << "\n\n";
+    }
+};
+
+class User {
+private:
+    std::vector<std::unique_ptr<UserData>> data;
+    std::unique_ptr<UserDAO> dao;
+
+public:
+    User(std::unique_ptr<UserDAO> userDao) : dao(std::move(userDao)) {}
+
+    void addData(std::unique_ptr<UserData> userData) {
+        data.push_back(std::move(userData));
+    }
+
+    void save() {
+        dao->save(data);
+    }
+
+    void load() {
+        data = dao->load();
+    }
+
+    void remove() {
+        dao->deleteUser();
+        data.clear();
+    }
+
+    void display() const {
+        std::cout << "User Data:\n";
+        for (const auto& item : data) {
+            item->display();
+        }
+        std::cout << "\n";
+    }
+
+    size_t getDataCount() const {
+        return data.size();
+    }
+};
+
+class UserFactory {
+public:
+    static std::unique_ptr<User> createStandardUser(std::unique_ptr<UserDAO> dao) {
+        StandardUserFactory factory;
+        auto user = std::make_unique<User>(std::move(dao));
+
+        user->addData(factory.createPersonalInfo());
+        user->addData(factory.createContactInfo());
+        user->addData(factory.createAddressInfo());
+
+        return user;
+    }
+
+    static std::unique_ptr<User> createPremiumUser(std::unique_ptr<UserDAO> dao) {
+        PremiumUserFactory factory;
+        auto user = std::make_unique<User>(std::move(dao));
+
+        user->addData(factory.createPersonalInfo());
+        user->addData(factory.createContactInfo());
+        user->addData(factory.createAddressInfo());
+
+        return user;
+    }
+
+    static std::unique_ptr<User> createMinimalUser(std::unique_ptr<UserDAO> dao) {
+        MinimalUserFactory factory;
+        auto user = std::make_unique<User>(std::move(dao));
+
+        user->addData(factory.createPersonalInfo());
+        user->addData(factory.createContactInfo());
+
+        return user;
+    }
+};
+
+int main() {
+
+    auto dbUser = UserFactory::createStandardUser(
+        std::make_unique<DatabaseUserDAO>("standard_user")
+    );
+
+    auto fileUser = UserFactory::createPremiumUser(
+        std::make_unique<FileUserDAO>("premium_user")
+    );
+
+    auto minimalUser = UserFactory::createMinimalUser(
+        std::make_unique<DatabaseUserDAO>("minimal_user")
+    );
+
+    std::cout << "1. Standard User:\n";
+    dbUser->display();
+    dbUser->save();
+
+    std::cout << "2. Premium User:\n";
+    fileUser->display();
+    fileUser->save();
+
+    std::cout << "3. Minimal User:\n";
+    minimalUser->display();
+    minimalUser->save();
+
+
+    std::cout << "4. Loading and deleting users:\n";
+    dbUser->load();
+    dbUser->remove();
+
+    std::cout << "5. Different data sets:\n";
+    std::cout << "Standard user has " << dbUser->getDataCount() << " data items\n";
+    std::cout << "Premium user has " << fileUser->getDataCount() << " data items\n";
+    std::cout << "Minimal user has " << minimalUser->getDataCount() << " data items\n";
+
+    return 0;
+}
