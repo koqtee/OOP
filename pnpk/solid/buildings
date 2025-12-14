@@ -177,17 +177,45 @@ private:
     std::vector<std::shared_ptr<ILivingSpace>> buildings;
 
 public:
-    // DIP — работа через абстракцию
     void addBuilding(std::shared_ptr<ILivingSpace> building) {
         buildings.push_back(building);
     }
 
     void displayAllBuildings() const {
-        std::cout << "\n=== КАТАЛОГ ЖИЛЫХ ЗДАНИЙ ===\n";
-        for (size_t i = 0; i < buildings.size(); ++i) {
-            std::cout << i + 1 << ". ";
-            buildings[i]->displayInfo();
+        std::cout << "\n=== КАТАЛОГ ВСЕХ ЗДАНИЙ ===\n";
+        for (const auto& b : buildings) {
+            b->displayInfo();
             std::cout << std::endl;
+        }
+    }
+
+    void displayCottages() const {
+        std::cout << "\n=== КАТАЛОГ КОТТЕДЖЕЙ ===\n";
+        for (const auto& b : buildings) {
+            if (dynamic_cast<Cottage*>(b.get())) {
+                b->displayInfo();
+                std::cout << std::endl;
+            }
+        }
+    }
+
+    void displaySkyscrapers() const {
+        std::cout << "\n=== КАТАЛОГ НЕБОСКРЁБОВ ===\n";
+        for (const auto& b : buildings) {
+            if (dynamic_cast<Skyscraper*>(b.get())) {
+                b->displayInfo();
+                std::cout << std::endl;
+            }
+        }
+    }
+
+    void displayDachas() const {
+        std::cout << "\n=== КАТАЛОГ ДАЧ ===\n";
+        for (const auto& b : buildings) {
+            if (dynamic_cast<Dacha*>(b.get())) {
+                b->displayInfo();
+                std::cout << std::endl;
+            }
         }
     }
 
@@ -195,6 +223,7 @@ public:
         return buildings.size();
     }
 };
+
 
 #endif
 
