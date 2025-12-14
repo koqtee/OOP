@@ -1,0 +1,263 @@
+++++Interfaces.h
+
+#ifndef INTERFACES_H
+#define INTERFACES_H
+
+#include <string>
+
+// Базовый интерфейс жилого помещения
+class ILivingSpace {
+public:
+    virtual ~ILivingSpace() = default;
+    virtual std::string getAddress() const = 0;
+    virtual double getArea() const = 0;
+    virtual void displayInfo() const = 0;
+};
+
+// Интерфейс жилого здания
+class IResidentialBuilding {
+public:
+    virtual ~IResidentialBuilding() = default;
+    virtual int getFloorsCount() const = 0;
+    virtual void addResident(const std::string& name) = 0;
+};
+
+// Интерфейс отопления
+class IHeatable {
+public:
+    virtual ~IHeatable() = default;
+    virtual void turnOnHeating() = 0;
+    virtual bool isHeatingOn() const = 0;
+};
+
+#endif
+
+++++Buildings.h
+
+#ifndef BUILDINGS_H
+#define BUILDINGS_H
+
+#include "Interfaces.h"
+#include <iostream>
+#include <vector>
+
+// Базовое здание
+class Building : public ILivingSpace {
+protected:
+    std::string address;
+    double area;
+
+public:
+    Building(const std::string& addr, double areaValue)
+        : address(addr), area(areaValue) {}
+
+    std::string getAddress() const override {
+        return address;
+    }
+
+    double getArea() const override {
+        return area;
+    }
+
+    void displayInfo() const override {
+        std::cout << "Адрес: " << address
+                  << ", Площадь: " << area << " м²";
+    }
+};
+
+// Жилое здание
+class ResidentialBuilding : public Building, public IResidentialBuilding {
+protected:
+    int floors;
+    std::vector<std::string> residents;
+
+public:
+    ResidentialBuilding(const std::string& addr, double areaValue, int floorsCount)
+        : Building(addr, areaValue), floors(floorsCount) {}
+
+    int getFloorsCount() const override {
+        return floors;
+    }
+
+    void addResident(const std::string& name) override {
+        residents.push_back(name);
+    }
+
+    void displayInfo() const override {
+        Building::displayInfo();
+        std::cout << ", Этажей: " << floors
+                  << ", Жителей: " << residents.size();
+    }
+};
+
+// Коттедж
+class Cottage : public ResidentialBuilding, public IHeatable {
+private:
+    bool heatingOn;
+
+public:
+    Cottage(const std::string& addr, double areaValue, int floorsCount)
+        : ResidentialBuilding(addr, areaValue, floorsCount), heatingOn(false) {}
+
+    void turnOnHeating() override {
+        heatingOn = true;
+    }
+
+    bool isHeatingOn() const override {
+        return heatingOn;
+    }
+
+    void displayInfo() const override {
+        ResidentialBuilding::displayInfo();
+        std::cout << ", Тип: коттедж";
+    }
+};
+
+// Небоскрёб
+class Skyscraper : public ResidentialBuilding, public IHeatable {
+private:
+    bool heatingOn;
+
+public:
+    Skyscraper(const std::string& addr, double areaValue, int floorsCount)
+        : ResidentialBuilding(addr, areaValue, floorsCount), heatingOn(false) {}
+
+    void turnOnHeating() override {
+        heatingOn = true;
+    }
+
+    bool isHeatingOn() const override {
+        return heatingOn;
+    }
+
+    void displayInfo() const override {
+        ResidentialBuilding::displayInfo();
+        std::cout << ", Тип: небоскрёб";
+    }
+};
+
+// Дача
+class Dacha : public Building, public IHeatable {
+private:
+    bool heatingOn;
+
+public:
+    Dacha(const std::string& addr, double areaValue)
+        : Building(addr, areaValue), heatingOn(false) {}
+
+    void turnOnHeating() override {
+        heatingOn = true;
+    }
+
+    bool isHeatingOn() const override {
+        return heatingOn;
+    }
+
+    void displayInfo() const override {
+        Building::displayInfo();
+        std::cout << ", Тип: дача";
+    }
+};
+
+#endif
+
+
+++++BuildingService.h
+
+
+#ifndef BUILDING_SERVICE_H
+#define BUILDING_SERVICE_H
+
+#include "Buildings.h"
+#include <vector>
+#include <memory>
+
+class BuildingService {
+private:
+    std::vector<std::shared_ptr<ILivingSpace>> buildings;
+
+public:
+    // DIP — работа через абстракцию
+    void addBuilding(std::shared_ptr<ILivingSpace> building) {
+        buildings.push_back(building);
+    }
+
+    void displayAllBuildings() const {
+        std::cout << "\n=== КАТАЛОГ ЖИЛЫХ ЗДАНИЙ ===\n";
+        for (size_t i = 0; i < buildings.size(); ++i) {
+            std::cout << i + 1 << ". ";
+            buildings[i]->displayInfo();
+            std::cout << std::endl;
+        }
+    }
+
+    size_t getBuildingsCount() const {
+        return buildings.size();
+    }
+};
+
+#endif
+
+
+++++main.cpp
+
+
+#include <iostream>
+#include <memory>
+#include "BuildingService.h"
+#include "windows.h"
+
+void demonstrateLSP(BuildingService& service) {
+    std::cout << "\n=== ДЕМОНСТРАЦИЯ LSP ===\n";
+
+    std::shared_ptr<ILivingSpace> b1 =
+        std::make_shared<Cottage>("ул. Лесная, 10", 120, 2);
+
+    std::shared_ptr<ILivingSpace> b2 =
+        std::make_shared<Skyscraper>("пр. Мира, 50", 500, 20);
+
+    std::shared_ptr<ILivingSpace> b3 =
+        std::make_shared<Dacha>("с. Озёрное, 3", 80);
+
+    service.addBuilding(b1);
+    service.addBuilding(b2);
+    service.addBuilding(b3);
+
+    std::cout << "Все объекты используются как ILivingSpace\n";
+}
+
+void demonstrateISP() {
+    std::cout << "\n=== ДЕМОНСТРАЦИЯ ISP ===\n";
+
+    Cottage cottage("ул. Садовая, 5", 100, 2);
+    cottage.turnOnHeating();
+
+    std::cout << "Адрес: " << cottage.getAddress() << std::endl;
+    std::cout << "Отопление: "
+              << (cottage.isHeatingOn() ? "включено" : "выключено") << std::endl;
+}
+
+void demonstrateDIP(BuildingService& service) {
+    std::cout << "\n=== ДЕМОНСТРАЦИЯ DIP ===\n";
+    service.displayAllBuildings();
+}
+
+int main() {
+
+    SetConsoleCP(1251);
+    SetConsoleOutputCP(1251);
+
+    BuildingService service;
+
+    std::cout << "ПРОГРАММА УЧЁТА ЖИЛЫХ ЗДАНИЙ\n";
+    std::cout << "============================\n";
+
+    demonstrateLSP(service);
+    demonstrateISP();
+    demonstrateDIP(service);
+
+    std::cout << "\nВсего зданий: " << service.getBuildingsCount() << std::endl;
+    std::cout << "Программа завершена\n";
+
+    return 0;
+}
