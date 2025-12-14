@@ -210,21 +210,18 @@ public:
 void demonstrateLSP(BuildingService& service) {
     std::cout << "\n=== ДЕМОНСТРАЦИЯ LSP ===\n";
 
-    std::shared_ptr<ILivingSpace> b1 =
-        std::make_shared<Cottage>("ул. Лесная, 10", 120, 2);
+    service.addBuilding(std::make_shared<Cottage>("ул. Лесная, 10", 120, 2));
+    service.addBuilding(std::make_shared<Cottage>("ул. Полевая, 7", 140, 2));
 
-    std::shared_ptr<ILivingSpace> b2 =
-        std::make_shared<Skyscraper>("пр. Мира, 50", 500, 20);
+    service.addBuilding(std::make_shared<Skyscraper>("пр. Мира, 50", 500, 20));
+    service.addBuilding(std::make_shared<Skyscraper>("пр. Победы, 1", 800, 35));
 
-    std::shared_ptr<ILivingSpace> b3 =
-        std::make_shared<Dacha>("с. Озёрное, 3", 80);
-
-    service.addBuilding(b1);
-    service.addBuilding(b2);
-    service.addBuilding(b3);
+    service.addBuilding(std::make_shared<Dacha>("с. Озёрное, 3", 80));
+    service.addBuilding(std::make_shared<Dacha>("д. Берёзки, 15", 60));
 
     std::cout << "Все объекты используются как ILivingSpace\n";
 }
+
 
 void demonstrateISP() {
     std::cout << "\n=== ДЕМОНСТРАЦИЯ ISP ===\n";
@@ -234,13 +231,18 @@ void demonstrateISP() {
 
     std::cout << "Адрес: " << cottage.getAddress() << std::endl;
     std::cout << "Отопление: "
-              << (cottage.isHeatingOn() ? "включено" : "выключено") << std::endl;
+        << (cottage.isHeatingOn() ? "включено" : "выключено") << std::endl;
 }
 
 void demonstrateDIP(BuildingService& service) {
     std::cout << "\n=== ДЕМОНСТРАЦИЯ DIP ===\n";
+
     service.displayAllBuildings();
+    service.displayCottages();
+    service.displaySkyscrapers();
+    service.displayDachas();
 }
+
 
 int main() {
 
