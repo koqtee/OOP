@@ -3,6 +3,11 @@
 #include <string>
 #include <memory>
 
+class Student;
+class Teacher;
+class Course;
+class Grade;
+
 class INamed {
 public:
     virtual ~INamed() = default;
@@ -12,19 +17,19 @@ public:
 class IGradeReceiver {
 public:
     virtual ~IGradeReceiver() = default;
-    virtual void receiveGrade(const class Grade& grade) = 0;
+    virtual void receiveGrade(const Grade& grade) = 0;
 };
 
 class IGradeProvider {
 public:
     virtual ~IGradeProvider() = default;
-    virtual void gradeStudent(IGradeReceiver& student, const class Course& course, int value) = 0;
+    virtual void gradeStudent(IGradeReceiver& student, const Course& course, int value) = 0;
 };
 
 class ICourseCreator {
 public:
     virtual ~ICourseCreator() = default;
-    virtual std::shared_ptr<class Course> createCourse(const std::string& title) = 0;
+    virtual std::shared_ptr<Course> createCourse(const std::string& title) = 0;
 };
 
 class IGradeDisplay {
@@ -35,18 +40,16 @@ public:
 
 class Grade {
 private:
-    const class Course* course;
-    const class Teacher* teacher;
+    const Course* course;
+    const Teacher* teacher;
     int value;
 
 public:
-    Grade(const Course* course, const Teacher* teacher, int val)
-        : course(course), teacher(teacher), value(val) {
-    }
+    Grade(const Course* course, const Teacher* teacher, int val);
 
-    const Course* getCourse() const { return course; }
-    const Teacher* getTeacher() const { return teacher; }
-    int getValue() const { return value; }
+    const Course* getCourse() const;
+    const Teacher* getTeacher() const;
+    int getValue() const;
 };
 
 class GradeArchive {
@@ -69,23 +72,14 @@ public:
 
 class GradeDisplayer {
 public:
-    static void display(const std::string& studentName, const GradeArchive& archive) {
-        std::cout << "\nСтудент: " << studentName;
-        std::cout << ", архив оценок:\n";
-        
-        for (const auto& grade : archive.getGrades()) {
-            std::cout << "курс - " << grade.getCourse()->getName()
-                      << ", преподаватель - " << grade.getTeacher()->getName()
-                      << ", оценка - " << grade.getValue() << "\n";
-        }
-    }
+    static void display(const std::string& studentName, const GradeArchive& archive);
 };
 
 class Course : public INamed {
 private:
     std::string title;
-    class Teacher* teacher;
-    std::vector<class Student*> attendedStudents;
+    Teacher* teacher;
+    std::vector<Student*> attendedStudents;
 
 public:
     Course(const std::string& title, Teacher* teacher)
@@ -95,41 +89,10 @@ public:
     std::string getName() const override { return title; }
     Teacher* getTeacher() const { return teacher; }
 
-    void addStudent(class Student* student) {
-        attendedStudents.push_back(student);
-    }
+    void addStudent(Student* student);
 
     const std::vector<Student*>& getAttendedStudents() const {
         return attendedStudents;
-    }
-};
-
-class Student : public INamed, public IGradeReceiver, public IGradeDisplay {
-private:
-    std::string name;
-    GradeArchive archive;
-    std::vector<std::shared_ptr<Course>> attendedCourses;
-
-public:
-    Student(const std::string& name) : name(name) {}
-
-    std::string getName() const override { return name; }
-    
-    void receiveGrade(const Grade& grade) override {
-        archive.addGrade(grade);
-    }
-
-    void showGrades() const override {
-        GradeDisplayer::display(name, archive);
-    }
-
-    void attendCourse(std::shared_ptr<Course> course) {
-        attendedCourses.push_back(course);
-        course->addStudent(this);
-    }
-
-    const std::vector<std::shared_ptr<Course>>& getAttendedCourses() const {
-        return attendedCourses;
     }
 };
 
@@ -142,12 +105,30 @@ public:
 
     std::string getName() const override { return name; }
 
-    std::shared_ptr<Course> createCourse(const std::string& title) override {
-        return std::make_shared<Course>(title, this);
-    }
+    std::shared_ptr<Course> createCourse(const std::string& title) override;
 
-    void gradeStudent(IGradeReceiver& student, const Course& course, int value) override {
-        student.receiveGrade(Grade(&course, this, value));
+    void gradeStudent(IGradeReceiver& student, const Course& course, int value) override;
+};
+
+class Student : public INamed, public IGradeReceiver, public IGradeDisplay {
+private:
+    std::string name;
+    GradeArchive archive;
+    std::vector<std::shared_ptr<Course>> attendedCourses;
+
+public:
+    Student(const std::string& name) : name(name) {}
+
+    std::string getName() const override { return name; }
+
+    void receiveGrade(const Grade& grade) override;
+
+    void showGrades() const override;
+
+    void attendCourse(std::shared_ptr<Course> course);
+
+    const std::vector<std::shared_ptr<Course>>& getAttendedCourses() const {
+        return attendedCourses;
     }
 };
 
@@ -171,26 +152,75 @@ public:
         return department;
     }
 
-    void gradeAllStudentsInCourse(const Course& course, int value) {
-        std::cout << "Преподаватель " << getName() 
-                  << " выставляет всем студентам курса " << course.getName()
-                  << " оценку " << value << std::endl;
-    }
+    void gradeAllStudentsInCourse(const Course& course, int value);
 };
 
 class ReportGenerator {
 public:
-    static void generateStudentReport(const Student& student) {
-        std::cout << "\n=== Отчет по студенту ===" << std::endl;
-        std::cout << "Имя: " << student.getName() << std::endl;
-        student.showGrades();
-    }
-
-    static void generateTeacherReport(const Teacher& teacher) {
-        std::cout << "\n=== Отчет по преподавателю ===" << std::endl;
-        std::cout << "Имя: " << teacher.getName() << std::endl;
-    }
+    static void generateStudentReport(const Student& student);
+    static void generateTeacherReport(const Teacher& teacher);
 };
+
+Grade::Grade(const Course* course, const Teacher* teacher, int val)
+    : course(course), teacher(teacher), value(val) {
+}
+
+const Course* Grade::getCourse() const { return course; }
+const Teacher* Grade::getTeacher() const { return teacher; }
+int Grade::getValue() const { return value; }
+
+void GradeDisplayer::display(const std::string& studentName, const GradeArchive& archive) {
+    std::cout << "\nСтудент: " << studentName;
+    std::cout << ", архив оценок:\n";
+
+    for (const auto& grade : archive.getGrades()) {
+        std::cout << "курс - " << grade.getCourse()->getName()
+            << ", преподаватель - " << grade.getTeacher()->getName()
+            << ", оценка - " << grade.getValue() << "\n";
+    }
+}
+
+void Course::addStudent(Student* student) {
+    attendedStudents.push_back(student);
+}
+
+void Student::receiveGrade(const Grade& grade) {
+    archive.addGrade(grade);
+}
+
+void Student::showGrades() const {
+    GradeDisplayer::display(name, archive);
+}
+
+void Student::attendCourse(std::shared_ptr<Course> course) {
+    attendedCourses.push_back(course);
+    course->addStudent(this);
+}
+
+std::shared_ptr<Course> Teacher::createCourse(const std::string& title) {
+    return std::make_shared<Course>(title, this);
+}
+
+void Teacher::gradeStudent(IGradeReceiver& student, const Course& course, int value) {
+    student.receiveGrade(Grade(&course, this, value));
+}
+
+void ExtendedTeacher::gradeAllStudentsInCourse(const Course& course, int value) {
+    std::cout << "Преподаватель " << getName()
+        << " выставляет всем студентам курса " << course.getName()
+        << " оценку " << value << std::endl;
+}
+
+void ReportGenerator::generateStudentReport(const Student& student) {
+    std::cout << "\n=== Отчет по студенту ===" << std::endl;
+    std::cout << "Имя: " << student.getName() << std::endl;
+    student.showGrades();
+}
+
+void ReportGenerator::generateTeacherReport(const Teacher& teacher) {
+    std::cout << "\n=== Отчет по преподавателю ===" << std::endl;
+    std::cout << "Имя: " << teacher.getName() << std::endl;
+}
 
 int main() {
     std::locale::global(std::locale(""));
