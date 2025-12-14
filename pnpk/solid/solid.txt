@@ -1,0 +1,227 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <memory>
+
+class INamed {
+public:
+    virtual ~INamed() = default;
+    virtual std::string getName() const = 0;
+};
+
+class IGradeReceiver {
+public:
+    virtual ~IGradeReceiver() = default;
+    virtual void receiveGrade(const class Grade& grade) = 0;
+};
+
+class IGradeProvider {
+public:
+    virtual ~IGradeProvider() = default;
+    virtual void gradeStudent(IGradeReceiver& student, const class Course& course, int value) = 0;
+};
+
+class ICourseCreator {
+public:
+    virtual ~ICourseCreator() = default;
+    virtual std::shared_ptr<class Course> createCourse(const std::string& title) = 0;
+};
+
+class IGradeDisplay {
+public:
+    virtual ~IGradeDisplay() = default;
+    virtual void showGrades() const = 0;
+};
+
+class Grade {
+private:
+    const class Course* course;
+    const class Teacher* teacher;
+    int value;
+
+public:
+    Grade(const Course* course, const Teacher* teacher, int val)
+        : course(course), teacher(teacher), value(val) {
+    }
+
+    const Course* getCourse() const { return course; }
+    const Teacher* getTeacher() const { return teacher; }
+    int getValue() const { return value; }
+};
+
+class GradeArchive {
+private:
+    std::vector<Grade> grades;
+
+public:
+    void addGrade(const Grade& grade) {
+        grades.push_back(grade);
+    }
+
+    const std::vector<Grade>& getGrades() const {
+        return grades;
+    }
+
+    void clear() {
+        grades.clear();
+    }
+};
+
+class GradeDisplayer {
+public:
+    static void display(const std::string& studentName, const GradeArchive& archive) {
+        std::cout << "\nСтудент: " << studentName;
+        std::cout << ", архив оценок:\n";
+        
+        for (const auto& grade : archive.getGrades()) {
+            std::cout << "курс - " << grade.getCourse()->getName()
+                      << ", преподаватель - " << grade.getTeacher()->getName()
+                      << ", оценка - " << grade.getValue() << "\n";
+        }
+    }
+};
+
+class Course : public INamed {
+private:
+    std::string title;
+    class Teacher* teacher;
+    std::vector<class Student*> attendedStudents;
+
+public:
+    Course(const std::string& title, Teacher* teacher)
+        : title(title), teacher(teacher) {
+    }
+
+    std::string getName() const override { return title; }
+    Teacher* getTeacher() const { return teacher; }
+
+    void addStudent(class Student* student) {
+        attendedStudents.push_back(student);
+    }
+
+    const std::vector<Student*>& getAttendedStudents() const {
+        return attendedStudents;
+    }
+};
+
+class Student : public INamed, public IGradeReceiver, public IGradeDisplay {
+private:
+    std::string name;
+    GradeArchive archive;
+    std::vector<std::shared_ptr<Course>> attendedCourses;
+
+public:
+    Student(const std::string& name) : name(name) {}
+
+    std::string getName() const override { return name; }
+    
+    void receiveGrade(const Grade& grade) override {
+        archive.addGrade(grade);
+    }
+
+    void showGrades() const override {
+        GradeDisplayer::display(name, archive);
+    }
+
+    void attendCourse(std::shared_ptr<Course> course) {
+        attendedCourses.push_back(course);
+        course->addStudent(this);
+    }
+
+    const std::vector<std::shared_ptr<Course>>& getAttendedCourses() const {
+        return attendedCourses;
+    }
+};
+
+class Teacher : public INamed, public IGradeProvider, public ICourseCreator {
+private:
+    std::string name;
+
+public:
+    Teacher(const std::string& name) : name(name) {}
+
+    std::string getName() const override { return name; }
+
+    std::shared_ptr<Course> createCourse(const std::string& title) override {
+        return std::make_shared<Course>(title, this);
+    }
+
+    void gradeStudent(IGradeReceiver& student, const Course& course, int value) override {
+        student.receiveGrade(Grade(&course, this, value));
+    }
+};
+
+class CourseManager {
+public:
+    static void enrollStudentToCourse(Student& student, std::shared_ptr<Course> course) {
+        student.attendCourse(course);
+    }
+};
+
+class ExtendedTeacher : public Teacher {
+private:
+    std::string department;
+
+public:
+    ExtendedTeacher(const std::string& name, const std::string& dept)
+        : Teacher(name), department(dept) {
+    }
+
+    std::string getDepartment() const {
+        return department;
+    }
+
+    void gradeAllStudentsInCourse(const Course& course, int value) {
+        std::cout << "Преподаватель " << getName() 
+                  << " выставляет всем студентам курса " << course.getName()
+                  << " оценку " << value << std::endl;
+    }
+};
+
+class ReportGenerator {
+public:
+    static void generateStudentReport(const Student& student) {
+        std::cout << "\n=== Отчет по студенту ===" << std::endl;
+        std::cout << "Имя: " << student.getName() << std::endl;
+        student.showGrades();
+    }
+
+    static void generateTeacherReport(const Teacher& teacher) {
+        std::cout << "\n=== Отчет по преподавателю ===" << std::endl;
+        std::cout << "Имя: " << teacher.getName() << std::endl;
+    }
+};
+
+int main() {
+    std::locale::global(std::locale(""));
+
+    Teacher t1("Голубев");
+    ExtendedTeacher t2("Шведов", "Иностранные языки");
+
+    Student s1("Паша");
+    Student s2("Саша");
+
+    auto math = t1.createCourse("Математика");
+    auto eng = t2.createCourse("Английский");
+
+    CourseManager::enrollStudentToCourse(s1, math);
+    CourseManager::enrollStudentToCourse(s1, eng);
+    CourseManager::enrollStudentToCourse(s2, eng);
+
+    t1.gradeStudent(s1, *math, 9);
+    t2.gradeStudent(s1, *eng, 8);
+    t2.gradeStudent(s2, *eng, 10);
+
+    t2.gradeAllStudentsInCourse(*eng, 7);
+
+    ReportGenerator::generateStudentReport(s1);
+    ReportGenerator::generateStudentReport(s2);
+    ReportGenerator::generateTeacherReport(t1);
+    ReportGenerator::generateTeacherReport(t2);
+
+    std::cout << "\n=== Просмотр оценок ===" << std::endl;
+    s1.showGrades();
+    s2.showGrades();
+
+    return 0;
+}
