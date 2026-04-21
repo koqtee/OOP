@@ -1,0 +1,155 @@
+2 touch file1.txt
+	echo "Hello" > file2.txt
+	ls -l
+
+ 
+
+
+3 mkdir dir1
+	mkdir dir2
+	ьлmkdir dir3 dir4
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4 echo "Some text" > myfile.txt
+	cp myfile.txt dir1/
+
+ 
+
+
+5 Рекурсивно скопируйте каталог с подкаталогами и файлами в другой пустой каталог. Просмотрите содержимое
+mkdir dir_with_content
+cp -r dir1 dir_with_content/
+ls -R dir_with_ content content
+
+
+
+
+
+
+ 
+
+
+6. Создайте файл abc.txt, переименуйте в cba.txt, переместите в каталог. Создайте каталог и переместите его в существующий
+mv abc.txt cba.txt
+mv cba.txt dir1/
+mkdir newdir
+mv newdir dir1/
+
+ 
+
+
+
+7. Создайте текстовый файл b.txt и символическую ссылку c.txt на него. Просмотрите содержимое
+
+echo "data" > b.txt
+ln -s b.txt c.txt
+ls -l
+
+ 
+
+
+
+8. Создайте жесткую ссылку d.txt для b.txt. Просмотрите информацию, измените время модификации через d.txt, выведите индексные дескрипторы
+ln b.txt d.txt
+ls -l b.txt d.txt
+touch d.txt
+ls -l b.txt d.txt
+ls -i b.txt d.txt
+
+
+
+
+
+
+ 
+
+
+9. Удалите файлы b.txt, c.txt, d.txt. Рекурсивно удалите каталоги с подтверждением и пустой каталог без подтверждения
+rm b.txt c.txt d.txt
+rm -ri dir1 
+rmdir empty_dir      # только для пустого каталога
+rm -rf some_empty_dir
+
+ 
+
+
+
+10. Выведите список каталогов верхнего уровня (/)
+ls /
+
+ 
+11. Зайдите в каталог etc, выведите имя компьютера
+cd /etc
+hostname
+
+ 
+
+
+12. В каталоге dev выведите информацию о терминалах, псевдотерминалах, дисках, памяти и null
+cd /dev
+ls -l tty* pts* sd* mem null
+
+ 
+
+
+13. Выведите информацию о смонтированных файловых системах и их размерах в килобайтах
+df -k
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+14. Произведите поиск в файле b.txt без ключей и с разными ключами. Поиск в нескольких файлах
+grep "pattern" b.txt
+grep -i "pattern" b.txt      # без учета регистра
+grep -n "pattern" b.txt      # с номерами строк
+grep "pattern" file1.txt file2.txt
+
+ 
+
+
+
+15. Найдите в домашнем каталоге все файлы, начинающиеся на "a"
+
+find ~ -type f -name "a*"
+
+ 
+16. Найдите в домашнем каталоге все файлы, модифицированные более 2 дней назад
+find ~ -type f -mtime +2
+
+ 
+
+17. Создать архив arh.tar, поместив в него файл b.txt и каталог prog со всеми файлами и подкаталогами
+
+
+tar -cvf arh.tar b.txt prog/
