@@ -1,0 +1,40 @@
+SELECT 
+    device_id,
+    replacement_date AS current_replacement_date,
+    -- Функция LAG «подтягивает» значение даты из предыдущей строки этого же устройства
+    LAG(replacement_date) OVER(
+        PARTITION BY device_id 
+        ORDER BY replacement_date
+    ) AS previous_replacement_date,
+    -- Сразу вычисляем чистую разницу (сколько дней/времени прошло между замен)
+    replacement_date - LAG(replacement_date) OVER(
+        PARTITION BY device_id 
+        ORDER BY replacement_date
+    ) AS time_passed_since_last_time
+FROM device_consumable_log
+ORDER BY device_id, replacement_date;
+
+
+
+/////
+WITH monthly_repairs AS (
+    -- Шаг 1: Агрегируем общее количество ремонтных заявок по месяцам
+    SELECT 
+        DATE_TRUNC('month', created_at) AS repair_month,
+        COUNT(request_id) AS repairs_count
+    FROM repair_requests
+    GROUP BY DATE_TRUNC('month', created_at)
+)
+-- Шаг 2: Применяем оконный фрейм для расчета среднего за 3 месяца
+SELECT 
+    TO_CHAR(repair_month, 'YYYY-MM') AS month,
+    repairs_count,
+    ROUND(
+        AVG(repairs_count) OVER(
+            ORDER BY repair_month 
+            -- Рамка окна: текущая строка + 2 строки перед ней (итого 3 месяца)
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+        ), 2
+    ) AS rolling_avg_3_months
+FROM monthly_repairs
+ORDER BY repair_month;
