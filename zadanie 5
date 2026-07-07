@@ -38,3 +38,38 @@ SELECT
     ) AS rolling_avg_3_months
 FROM monthly_repairs
 ORDER BY repair_month;
+
+////
+
+-- 1. Составной индекс на лог: для быстрой фильтрации по дате и связи с устройствами
+CREATE INDEX idx_log_date_device 
+ON device_consumable_log (replacement_date, device_id, employee_id);
+
+-- 2. Составной индекс на устройства: для ускорения фильтрации по типу и статусу техники
+CREATE INDEX idx_devices_type_status 
+ON devices (device_type, status);
+
+-- 3. Индекс на сотрудников для мгновенной фильтрации по отделу
+CREATE INDEX idx_employees_dept_emp 
+ON employees (department_id, emp_id);
+
+
+////
+
+-- Шаг 1: Открываем транзакцию
+BEGIN;
+
+-- Шаг 2: Случайный опасный запрос бухгалтера (меняет статус ВСЕХ принтеров)
+UPDATE devices 
+SET status = 'written_off' 
+WHERE device_type = 'printer';
+
+-- Шаг 3: Проверяем, что всё сломалось (видим, что списались лишние принтеры)
+SELECT device_id, model, status FROM devices WHERE device_type = 'printer';
+
+-- Шаг 4: Отменяем всё назад! База возвращается в исходное состояние
+ROLLBACK;
+
+-- Проверяем: статусы снова 'working'
+SELECT device_id, model, status FROM devices WHERE device_type = 'printer';
+
