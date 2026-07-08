@@ -1,155 +1,348 @@
-2 touch file1.txt
-	echo "Hello" > file2.txt
-	ls -l
 
- 
+// задание 1 //
+
+select *  from devices d 
+where d.status =  'working'
+and d.dev_type in ('printer','mfu') 
+and d.warranty_end <= current_date + interval '3 months'
+and d.warranty_end >= current_date 
+
+
+
+
+// 2 задание //
+
+select count(dev_id) as count, dep.dep_name as name
+from devices d 
+join employees e on d.employee_id = e.emp_id 
+join departments dep on e.department_id = dep.dep_id 
+group by name
+order by count DESC
+
+
+// 3 задание //
+select count(dcl.employee_id) as count, e.emp_full_name as name
+from device_consumable_log dcl  
+join devices d on dcl.employee_id = d.employee_id 
+join employees e on d.employee_id = e.emp_id 
+group by name
+order by count DESC
+
+// 4 задание // 
+
+
+select d.dev_model as name, d.status as status, d.dev_id as id, d.warranty_end as usage_ended, rr.created_at as repair_requsted, rr.resolved_at  as repair_ended
+from devices as d 
+join repair_requests rr on d.dev_id = rr.req_device_id 
+where d.status  = 'written_off'
+and rr.created_at >= current_date - interval '1 year'
+
+
+
+
+----------------------------------- DEN 4 ZADANIYA
+
+// 1 zadanie ///
+
+with model_stats as (
+select d.dev_model as model, count(rr.rep_id) as req_count, count(d.dev_id) as dev_count,
+(count(rr.rep_id) / count(d.dev_id)) as problems
+from repair_requests rr 
+join devices d on rr.req_device_id = d.dev_id 
+group by d.dev_model 
+)
+select model, req_count, dev_count 
+from model_stats
+
+
+// 2 zadanie //
+with 
+date_cte as (
+	select dcl.replacement_date as date, 
+	c.cons_id as id
+	from device_consumable_log dcl 
+	join consumables c on dcl.consumable_id = c.cons_id 
+	order by date
+), 
+days_cte as (
+	select (to_char(dc.date, 'j')::integer) as date_in_days, 
+	id 
+	from date_cte dc
+), 
+diff_cte as (
+	select (date_in_days - min(date_in_days) over (partition by id)) as days, 
+	id 
+	from days_cte dac
+	order by id, days
+	),
+max_cte as (
+	select (max(days) over (partition by id)) as max_date, 
+	id 
+	from diff_cte
+),
+avg_cte as (
+	select (max_date / count(id)) as avg, 
+	id 
+	from max_cte
+	group by max_date, id
+	order by avg 
+)
+select * 
+from diff_cte
+
+
+// 3 zadanie //
+
+
+select d.dev_model as name, d.status as status, d.dev_id as device_id
+from devices as d 
+join device_consumable_log dcl  on d.dev_id = dcl.device_id 
+where d.status  = 'working'
+and d.dev_id NOT in (
+select d.dev_id as id
+from devices as d 
+join device_consumable_log dcl  on d.dev_id = dcl.device_id 
+where dcl.replacement_date  <= current_date
+and dcl.replacement_date  >= current_date - interval '2 months'
+)
+order by device_id desc
+
+---------------------------------------- den 5
 
 
-3 mkdir dir1
-	mkdir dir2
-	ьлmkdir dir3 dir4
+// zadanie 1 /// 
+
+select e.department_id, d.dev_id, d.dev_model , d.purchase_date , age(current_date, d.purchase_date ) as device_age, row_number() over(
+partition by e.department_id order by d.purchase_date
+) as age_ordering_by_departments
+from devices d 
+join employees e on d.employee_id = e.emp_id 
+order by 
 
- 
+// zadanie 2 //
 
+select
+	device_id,
+	replacement_date as replacement_date,
+	lag(replacement_date) over(
+partition by device_id order by replacement_date) as previous_replacement_date,
+	replacement_date - lag(replacement_date) over( partition by device_id order by replacement_date
+    ) as time_difference
+from
+	device_consumable_log
+where
+	device_id = 1
+order by
+	device_id,
+	replacement_date
 
 
+// zadanie 3 // 
+with monthly_repairs as (
+select
+	date_trunc('month', created_at) as repair_month,
+	count(rep_id) as repairs_count
+from
+	repair_requests
+group by
+	date_trunc('month', created_at)
+)
+select
+	to_char(repair_month, 'YYYY-MM') as month,
+	repairs_count,
+	round(
+        avg(repairs_count) over(
+            order by repair_month
+            rows between 2 preceding and current row
+        ), 2
+    ) as rolling_avg
+from
+	monthly_repairs
+	where repair_month >= current_date - interval'4 month'
+order by
+	repair_month;
 
 
 
 
 
 
+-------------------------------------- den 6 ---------------------
 
+explain analyse
+select
+	dcl.log_id  as log_id,
+	dcl.device_id ,
+	dcl.consumable_id ,
+	dcl.employee_id as employee,
+	dep.dep_id,
+	dcl.replacement_date
+from
+	public.device_consumable_log dcl
+join employees e on
+	dcl.employee_id = e.emp_id
+join departments dep on
+	e.department_id = dep.dep_id
+order by
+	dep.dep_id , dcl.log_id 
+
+
+Planning Time: 0.230 ms
+Execution Time: 0.130 ms
+
+  ВОТ ЭТО ИСПРАВИТЬ
+
+
+create index uix_emp_department_id 
+on employees (department_id)
+with (fillfactor = 75)
 
 
+ПРОВЕРИТЬ ВРЕМЯ ПЛАНИРОВАНИЯ И ВРЕМЯ ИСПОЛНЕНИЯ
+
 
 
+create index uix_dev_log_info 
+on device_consumable_log (replacement_date, device_id, employee_id)
+with (fillfactor = 75)
 
 
 
+---------------- den 7 ------------------
+begin;
+update employees e 
+set emp_full_name = 'Сотрудник 24'
+where e.emp_full_name = 'Сотрудник 20';
 
+select * from employees where emp_id >= 20;
 
+commit;
+rollback;
 
 
 
-4 echo "Some text" > myfile.txt
-	cp myfile.txt dir1/
 
- 
 
 
-5 Рекурсивно скопируйте каталог с подкаталогами и файлами в другой пустой каталог. Просмотрите содержимое
-mkdir dir_with_content
-cp -r dir1 dir_with_content/
-ls -R dir_with_ content content
+--------------------------------------------
 
 
+create table Departments (
+dep_id serial primary key,
+dep_name varchar(100) not null,
+dep_location varchar(100) not null,
+dep_phone varchar(30) not null,
+)
 
 
+create table Employees (
+emp_id INT GENERATED BY DEFAULT AS IDENTITY primary key,
+emp_full_name varchar(100) not null,
+emp_email varchar(100),
+emp_position varchar(30) not null,
+department_id int,
+constraint fk_employees_departments foreign key (department_id) references Departments(dep_id)  
+)
 
+create table Devices (
+dev_id INT GENERATED BY DEFAULT AS IDENTITY primary key,
+inventory_number varchar(100) not null,
+dev_type varchar(100) not null,
+dev_model varchar(100),
+serial_number varchar(100) not null,
+purchase_date date, 
+warranty_end date, 
+status varchar(100) not null,
+employee_id int,
+constraint fk_devices_employees foreign key (employee_id) references Employees(emp_id)  
+)
 
- 
+create table Consumables (
+cons_id INT GENERATED BY DEFAULT AS IDENTITY primary key,
+cons_name varchar(100) not_null,
+compatible_models varchar(250) not null,  
+)
 
+create table Device_Consumable_Log (
+log_id INT GENERATED BY DEFAULT AS IDENTITY primary key,
+replacement_date date,
+pages_printed_before int,
+device_id int,
+consumable_id int,
+employee_id int,
+constraint fk_log_devices foreign key (device_id) references Devices(dev_id),
+constraint fk_log_employees foreign key (employee_id) references Employees(emp_id),
+constraint fk_log_consumables foreign key (consumable_id) references Consumables(cons_id)
+)
 
-6. Создайте файл abc.txt, переименуйте в cba.txt, переместите в каталог. Создайте каталог и переместите его в существующий
-mv abc.txt cba.txt
-mv cba.txt dir1/
-mkdir newdir
-mv newdir dir1/
+create table Repair_Requests (
+rep_id INT GENERATED BY DEFAULT AS IDENTITY primary key,
+issue_description varchar(250),
+created_at date,
+resolved_at date,
+status varchar(50) not null,
+req_device_id int,
+req_employee_id int,
+constraint fk_repair_devices foreign key (req_device_id) references Devices(dev_id),
+constraint fk_repair_employees foreign key (req_employee_id) references Employess(emp_id),
+)
 
- 
+--------------------------------------------------------- ВСТАВКА
 
 
 
-7. Создайте текстовый файл b.txt и символическую ссылку c.txt на него. Просмотрите содержимое
+INSERT INTO public.departments
+(dep_id, dep_name, dep_location, dep_phone)
+VALUES(nextval('departments_dep_id_seq'::regclass), 'бухгалтерия', '1 этаж', '123'); 
 
-echo "data" > b.txt
-ln -s b.txt c.txt
-ls -l
 
- 
+INSERT INTO public.employees
+(emp_full_name, emp_email, emp_position, department_id)
+VALUES('Андрей', 'an213@gmail.com', 'бухгалтер', 1);
 
 
+INSERT INTO public.devices
+(inventory_number, dev_type, dev_model, serial_number, purchase_date, warranty_end, status, employee_id)
+VALUES('A11', 'принтер', 'принтер 1', '111001', '2022-04-12', '2027-04-13', 'working' 'written_off' 'repair', 1);
 
-8. Создайте жесткую ссылку d.txt для b.txt. Просмотрите информацию, измените время модификации через d.txt, выведите индексные дескрипторы
-ln b.txt d.txt
-ls -l b.txt d.txt
-touch d.txt
-ls -l b.txt d.txt
-ls -i b.txt d.txt
 
+INSERT INTO public.repair_requests
+(issue_description, created_at, resolved_at, status, req_device_id, req_employee_id)
+VALUES('принтер не работает', '2026-03-20', '', 'new',4 ,3);
 
 
+------------------------------------- ВЫБОРКА
+SELECT emp_id AS employee, emp_full_name AS full_name,  emp_email AS email, emp_position AS position, department_id
+FROM public.employees
+ORDER BY department_id;
 
 
+SELECT *
+FROM public.repair_requests;
 
- 
+SELECT *
+FROM public.employees ;
 
+SELECT *
+FROM public.departments ; 
 
-9. Удалите файлы b.txt, c.txt, d.txt. Рекурсивно удалите каталоги с подтверждением и пустой каталог без подтверждения
-rm b.txt c.txt d.txt
-rm -ri dir1 
-rmdir empty_dir      # только для пустого каталога
-rm -rf some_empty_dir
+SELECT *
+FROM public.consumables; 
 
- 
+SELECT *
+FROM public.devices; 
 
+SELECT *
+FROM public.device_consumable_log ; 
 
 
-10. Выведите список каталогов верхнего уровня (/)
-ls /
 
- 
-11. Зайдите в каталог etc, выведите имя компьютера
-cd /etc
-hostname
 
- 
+--------------------------------- АПДЕЙТ
+update departments d 
+set dep_phone = '+ 375 29 3233333'
+where dep_
 
 
-12. В каталоге dev выведите информацию о терминалах, псевдотерминалах, дисках, памяти и null
-cd /dev
-ls -l tty* pts* sd* mem null
 
- 
 
-
-13. Выведите информацию о смонтированных файловых системах и их размерах в килобайтах
-df -k
-
-
-
-
-
-
-
-
-
-
- 
-
-
-14. Произведите поиск в файле b.txt без ключей и с разными ключами. Поиск в нескольких файлах
-grep "pattern" b.txt
-grep -i "pattern" b.txt      # без учета регистра
-grep -n "pattern" b.txt      # с номерами строк
-grep "pattern" file1.txt file2.txt
-
- 
-
-
-
-15. Найдите в домашнем каталоге все файлы, начинающиеся на "a"
-
-find ~ -type f -name "a*"
-
- 
-16. Найдите в домашнем каталоге все файлы, модифицированные более 2 дней назад
-find ~ -type f -mtime +2
-
- 
-
-17. Создать архив arh.tar, поместив в него файл b.txt и каталог prog со всеми файлами и подкаталогами
-
-
-tar -cvf arh.tar b.txt prog/
